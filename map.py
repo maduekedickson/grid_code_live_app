@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
 
+
+def run():
 # Load GeoJSON file for Nigeria state boundaries
 geojson_file = "ng.json"  # Ensure this file exists in the same directory
 with open(geojson_file, "r") as f:
@@ -242,3 +244,8 @@ folium.LayerControl().add_to(hospital_map)
 
 # Render map
 folium_static(hospital_map)
+
+
+# Run the app
+if __name__ == "__main__":
+    run()
