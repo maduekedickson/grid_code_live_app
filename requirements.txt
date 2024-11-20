@@ -3,7 +3,6 @@ folium
 numpy
 requests
 importlib
-json
 BytesIO
 matplotlib
 base64
