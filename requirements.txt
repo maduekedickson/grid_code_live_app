@@ -1,8 +1,7 @@
 streamlit
 folium
-numpy
-requests
-importlib
-BytesIO
+streamlit-folium
+pandas
 matplotlib
-base64
+requests
+importlib-metadata
