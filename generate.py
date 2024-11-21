@@ -11,12 +11,12 @@ SAVE_URL = "https://gcorea.gridweb.net/gridcode/api/store"
 
 def run():
     # App Title
-    st.title("Generate Code and Save")
+    st.title("Grid Code Generator and Save!")
 
     # Input Fields for Latitude, Longitude, and Country Code
-    lat = st.number_input("Enter Latitude")
-    lon = st.number_input("Enter Longitude")
-    country_code = st.text_input("Enter Country Code")
+    lat = st.number_input("Enter Latitude", format="%.6f")
+    lon = st.number_input("Enter Longitude", format="%.6f")
+    country_code = st.text_input("Enter Country Code", placeholder="Enter the country code")
 
     # Button to Generate Grid Code
     if st.button("Generate GridCode"):
@@ -53,63 +53,89 @@ def run():
         # Inputs for additional data
         category_id = st.text_input("Category ID", value="EA6955C1-153D-4AC8-AAD2-A37E29189920")
         title_description = st.text_input("Title/Description", value=generated_code['address'])
-        lat_a = st.number_input("Lat A", value=lat)
-        long_a = st.number_input("Long A", value=lon)
-        lat_b = st.number_input("Lat B", value=lat + 0.000001)
-        long_b = st.number_input("Long B", value=lon + 0.000001)
-        lat_c = st.number_input("Lat C", value=lat + 0.000002)
-        long_c = st.number_input("Long C", value=lon + 0.000002)
+        name = st.text_input("Name (required)", placeholder="Enter a name for the Grid Code")
+        lat_a = st.number_input("Lat A", value=lat, format="%.6f")
+        long_a = st.number_input("Long A", value=lon, format="%.6f")
+        lat_b = st.number_input("Lat B", value=lat + 0.000001, format="%.6f")
+        long_b = st.number_input("Long B", value=lon + 0.000001, format="%.6f")
+        lat_c = st.number_input("Lat C", value=lat + 0.000002, format="%.6f")
+        long_c = st.number_input("Long C", value=lon + 0.000002, format="%.6f")
+
+        # Add animated warning if 'name' is not filled
+        if not name.strip():
+            st.markdown(
+                """
+                <style>
+                .blinking {
+                    color: red;
+                    animation: blinker 1.5s linear infinite;
+                }
+                @keyframes blinker {
+                    50% { opacity: 0; }
+                }
+                </style>
+                <p class="blinking">Remember to add a name before saving!</p>
+                """, 
+                unsafe_allow_html=True
+            )
 
         if st.button("Save Grid Code"):
-            save_body = {
-                "countryCode": country_code,
-                "gridcode": generated_code["gridcode"],
-                "categoryId": category_id,
-                "titleDescription": title_description,
-                "latA": lat_a,
-                "longA": long_a,
-                "latB": lat_b,
-                "longB": long_b,
-                "latC": lat_c,
-                "longC": long_c,
-                "generateAction": "NONE"
-            }
-            
-            save_response = requests.post(SAVE_URL, headers=HEADERS, json=save_body)
-            
-            if save_response.status_code == 200:
-                st.success("Grid Code Saved Successfully!")
-                save_data = save_response.json()["data"]
-                
-                # Display only specific fields
-                st.markdown(f"""
-                <h3>Grid Code: {save_data['gridCode']}</h3>
-                <h3>Country Code: {save_data['countryCode']}</h3>
-                <h3>Details: {save_data['detail']}</h3>
-                """, unsafe_allow_html=True)
-            elif save_response.status_code == 300:
-                st.warning("A grid code already exists at this location.")
-                data = save_response.json()["data"]
-                options = data.get("options", [])
-                choice = st.radio("Choose an action:", options)
-
-                if st.button("Confirm Action"):
-                    save_body["generateAction"] = choice
-                    confirm_response = requests.post(SAVE_URL, headers=HEADERS, json=save_body)
-                    
-                    if confirm_response.status_code == 200:
-                        st.success(f"Action '{choice}' completed successfully!")
-                        confirm_data = confirm_response.json()["data"]
-                        # Display only specific fields after action
-                        st.markdown(f"""
-                        <h3>Grid Code: {confirm_data['gridCode']}</h3>
-                        <h3>Country Code: {confirm_data['countryCode']}</h3>
-                        <h3>Details: {confirm_data['detail']}</h3>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.error(f"Error: {confirm_response.json().get('message', 'Unknown error')}")
+            # Validate required 'name' field
+            if not name.strip():
+                st.error("The 'Name' field is required to save the grid code.")
             else:
-                st.error(f"Error: {save_response.json().get('message', 'Unknown error')}")
+                save_body = {
+                    "countryCode": country_code,
+                    "gridcode": generated_code["gridcode"],
+                    "categoryId": category_id,
+                    "titleDescription": title_description,
+                    "name": name,  # Include 'name' in the payload
+                    "latA": lat_a,
+                    "longA": long_a,
+                    "latB": lat_b,
+                    "longB": long_b,
+                    "latC": lat_c,
+                    "longC": long_c,
+                    "generateAction": "NONE"
+                }
+
+                save_response = requests.post(SAVE_URL, headers=HEADERS, json=save_body)
+
+                if save_response.status_code == 200:
+                    st.success("Grid Code Saved Successfully!")
+                    save_data = save_response.json()["data"]
+                    
+                    # Display only specific fields
+                    st.markdown(f"""
+                    <h3>Grid Code: {save_data['gridCode']}</h3>
+                    <h3>Country Code: {save_data['countryCode']}</h3>
+                    <h3>Details: {save_data['detail']}</h3>
+                    """, unsafe_allow_html=True)
+                elif save_response.status_code == 300:
+                    st.warning("A grid code already exists at this location.")
+                    data = save_response.json()["data"]
+                    options = data.get("options", [])
+                    choice = st.radio("Choose an action:", options)
+
+                    if st.button("Confirm Action"):
+                        save_body["generateAction"] = choice
+                        confirm_response = requests.post(SAVE_URL, headers=HEADERS, json=save_body)
+                        
+                        if confirm_response.status_code == 200:
+                            st.success(f"Action '{choice}' completed successfully!")
+                            confirm_data = confirm_response.json()["data"]
+                            # Display only specific fields after action
+                            st.markdown(f"""
+                            <h3>Grid Code: {confirm_data['gridCode']}</h3>
+                            <h3>Country Code: {confirm_data['countryCode']}</h3>
+                            <h3>Details: {confirm_data['detail']}</h3>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.error(f"Error: {confirm_response.json().get('message', 'Unknown error')}")
+                else:
+                    st.error(f"Error: {save_response.json().get('message', 'Unknown error')}")
     else:
         st.info("Generate a grid code first to save it.")
 
+if __name__ == "__main__":
+    run()
